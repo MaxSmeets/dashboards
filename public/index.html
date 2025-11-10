@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Homelab — Prototype (Vanilla JS)</title>
+    <link rel="stylesheet" href="./css/base.css" />
+    <link rel="stylesheet" href="./css/layout.css" />
+    <link rel="stylesheet" href="./css/components.css" />
+    <link rel="stylesheet" href="./css/themes.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header id="app-header"></header>
+    <div class="app">
+      <nav id="app-nav" aria-label="Main"></nav>
+      <main id="main" tabindex="-1">
+        <div id="route-outlet"></div>
+      </main>
+      <aside id="right-rail" aria-label="Recent alerts"></aside>
+    </div>
+    <div id="toasts" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="./js/main.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+/* Minimal base styles + CSS variables */
+:root{
+  --bg: #ffffff; --fg: #0b1220; --muted: #6b7280; --c-ok:#059669; --c-warn:#f59e0b; --c-err:#ef4444; --c-info:#2563eb;
+  --card-bg:#ffffff; --radius:12px; --shadow: 0 6px 18px rgba(11,18,32,0.06);
+}
+html[data-theme='dark']{ --bg:#071122; --fg:#e6eef8; --muted:#94a3b8; --card-bg:#071a2a }
+*{box-sizing:border-box}
+html,body,#main{height:100%}
+body{margin:0;font-family:Inter,Segoe UI,system-ui,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.skip{position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+button{font:inherit}
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+.h1{font-size:1.25rem;font-weight:600}
+.small{font-size:0.9rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:0.8rem}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+
+/* Focus management */
+*:focus-visible {
+  outline: 2px solid var(--c-info);
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

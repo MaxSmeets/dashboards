@@ -1,0 +1,8 @@
+/* Theme toggling via data-theme on html */
+:root{color-scheme:light}
+html[data-theme='dark']{color-scheme:dark}
+/* status colors */
+.status-ok{color:var(--c-ok)}
+.status-warn{color:var(--c-warn)}
+.status-err{color:var(--c-err)}
+.status-info{color:var(--c-info)}

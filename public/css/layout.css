@@ -1,0 +1,36 @@
+/* Layout: header, sidebar, main, right-rail */
+.app{display:grid;grid-template-columns:220px 1fr 300px;grid-template-rows:auto 1fr;gap:16px;padding:16px;transition:grid-template-columns 0.3s ease}
+.app.sidebar-collapsed{grid-template-columns:0 1fr 300px}
+#app-header{grid-column:1/-1;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.04);background:var(--card-bg)}
+#app-nav{background:transparent;padding:8px;overflow:hidden;transition:all 0.3s ease}
+#app-nav.collapsed{width:0;padding:0;opacity:0;pointer-events:none}
+#main{padding:8px}
+#right-rail{padding:8px}
+@media (max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto}#right-rail{order:3}}
+.grid-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+
+/* Header improvements */
+#app-header .container {
+    max-width: none;
+    padding: 0;
+}
+
+#global-search {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#global-search:focus {
+    border-color: var(--c-info);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+#sidebar-toggle {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--fg);
+}
+
+#sidebar-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: var(--c-info);
+}
