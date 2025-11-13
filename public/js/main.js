@@ -5,8 +5,11 @@ import { registerDashboardRoute } from './ui/dashboard.js';
 import { registerServiceDetailRoute } from './ui/serviceDetail.js';
 import { registerAlertsRoute } from './ui/alerts.js';
 import { registerServicesRoute } from './ui/services.js';
+import { registerComparisonRoute } from './ui/comparison.js';
 import { registerSettingsRoute, initTheme } from './ui/settings.js';
+import { initLogsPage } from './ui/logs.js';
 import { initCommandPalette } from './components/commandPalette.js';
+import { initDependencyGraphInteractions } from './components/dependencyGraph.js';
 import { registerRoute, initRouter } from './router.js';
 
 async function boot(){
@@ -20,11 +23,14 @@ async function boot(){
   registerServiceDetailRoute();
   registerAlertsRoute();
   registerServicesRoute();
+  registerComparisonRoute();
   registerSettingsRoute();
+  initLogsPage();
   registerRoute('/about', ()=>{ document.getElementById('route-outlet').innerHTML = '<div class="container card"><h2>About</h2><p>Vanilla prototype.</p></div>' });
   initRouter();
   initTheme();
   initCommandPalette();
+  initDependencyGraphInteractions();
   initChartTooltips();
   if(!location.hash) location.hash = '#/';
 }

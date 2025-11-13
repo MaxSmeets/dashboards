@@ -1,7 +1,7 @@
 import { getState, setState } from '../store.js';
 import { registerRoute } from '../router.js';
 import { createKpiGrid } from '../components/kpiGrid.js';
-import { createLineChart } from '../components/charts.js';
+import { createLineChart, createAreaChart, createGaugeChart } from '../components/charts.js';
 import { triggerAction } from '../lib/mockApi.js';
 import { showConfirmDialog } from '../components/confirmDialog.js';
 
@@ -92,10 +92,26 @@ function renderTabContent(tabId, service, container) {
         container.innerHTML = '<h2>Metrics</h2><p>No metrics data available.</p>';
         break;
       }
-      const charts = Object.entries(service.metrics.timeseries).map(([key, data]) => 
-        createLineChart(data, { label: formatMetricName(key), color: 'var(--c-info)' })
-      ).join('');
-      container.innerHTML = `<h2>Metrics</h2><div class="metrics-grid">${charts}</div>`;
+      const charts = Object.entries(service.metrics.timeseries).map(([key, data]) => {
+        // Use different chart types based on metric
+        if (key.toLowerCase().includes('pct') || key.toLowerCase().includes('percent') || key.toLowerCase().includes('usage')) {
+          // For percentage metrics, use area chart
+          return createAreaChart(data, { label: formatMetricName(key), color: 'var(--c-info)' });
+        } else {
+          // Default to line chart
+          return createLineChart(data, { label: formatMetricName(key), color: 'var(--c-ok)' });
+        }
+      }).join('');
+      
+      // Add gauge charts for current percentage values
+      const gauges = service.kpis
+        .filter(kpi => typeof kpi.value === 'number' && (kpi.key.toLowerCase().includes('pct') || kpi.key.toLowerCase().includes('percent')))
+        .map(kpi => createGaugeChart(kpi.value, { label: kpi.label }))
+        .join('');
+      
+      container.innerHTML = `<h2>Metrics</h2>
+        ${gauges ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">${gauges}</div>` : ''}
+        <div class="metrics-grid">${charts}</div>`;
       break;
 
     case 'alerts':
@@ -189,16 +205,9 @@ function renderTabContent(tabId, service, container) {
         container.innerHTML = '<h2>Logs</h2><p>No logs available.</p>';
         break;
       }
-      container.innerHTML = `<h2>Logs</h2>
-        <div class="logs-viewer">
-          ${service.logs.map(log => `
-            <div class="log-line">
-              <span class="log-timestamp">${new Date(log.ts).toLocaleString()}</span>
-              <span class="log-message">${escapeHtml(log.msg)}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
+      
+      // Render logs with enhanced viewer
+      renderEnhancedLogs(service.logs, container);
       break;
     default:
       container.innerHTML = '<p>Select a tab</p>';
@@ -209,6 +218,107 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 
 function formatMetricName(key) {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+}
+
+// Enhanced logs viewer with filtering, search, and export
+function renderEnhancedLogs(logs, container) {
+  let logFilter = 'all'; // all, error, warn, info, debug
+  let searchQuery = '';
+  let wrapLines = false;
+  
+  function renderLogs() {
+    const filteredLogs = logs.filter(log => {
+      // Level filter
+      if (logFilter !== 'all' && log.level !== logFilter) return false;
+      
+      // Search filter
+      if (searchQuery && !log.msg.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      
+      return true;
+    });
+    
+    const logHtml = filteredLogs.map(log => {
+      const levelClass = `log-level-${log.level || 'info'}`;
+      const levelBadge = log.level ? `<span class="log-level-badge ${levelClass}">${log.level.toUpperCase()}</span>` : '';
+      return `
+        <div class="log-line ${wrapLines ? 'wrap' : 'nowrap'}">
+          <span class="log-timestamp">${new Date(log.ts).toLocaleString()}</span>
+          ${levelBadge}
+          <span class="log-message">${escapeHtml(log.msg)}</span>
+        </div>
+      `;
+    }).join('');
+    
+    const logsContainer = container.querySelector('#logs-container');
+    if (logsContainer) {
+      logsContainer.innerHTML = logHtml || '<p class="small" style="padding:12px">No logs match your filters.</p>';
+    }
+  }
+  
+  container.innerHTML = `
+    <h2>Logs</h2>
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <div>
+        <label style="font-weight:600;margin-right:8px">Level:</label>
+        <select id="log-level-filter" style="padding:6px;border:1px solid rgba(0,0,0,0.1);border-radius:6px">
+          <option value="all">All Levels</option>
+          <option value="error">Error</option>
+          <option value="warn">Warning</option>
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+        </select>
+      </div>
+      
+      <input type="search" id="log-search" placeholder="Search logs..." 
+             style="padding:6px 12px;border:1px solid rgba(0,0,0,0.1);border-radius:6px;min-width:200px;flex:1;max-width:400px">
+      
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="log-wrap-toggle">
+        Wrap lines
+      </label>
+      
+      <button id="export-logs" class="btn-secondary" style="margin-left:auto">Export Logs</button>
+    </div>
+    
+    <div class="logs-viewer" id="logs-container">
+      <!-- Logs will be rendered here -->
+    </div>
+  `;
+  
+  // Initial render
+  renderLogs();
+  
+  // Event listeners
+  container.querySelector('#log-level-filter')?.addEventListener('change', (e) => {
+    logFilter = e.target.value;
+    renderLogs();
+  });
+  
+  container.querySelector('#log-search')?.addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    renderLogs();
+  });
+  
+  container.querySelector('#log-wrap-toggle')?.addEventListener('change', (e) => {
+    wrapLines = e.target.checked;
+    renderLogs();
+  });
+  
+  container.querySelector('#export-logs')?.addEventListener('click', () => {
+    const logText = logs.map(log => 
+      `[${new Date(log.ts).toISOString()}] [${(log.level || 'INFO').toUpperCase()}] ${log.msg}`
+    ).join('\n');
+    
+    const blob = new Blob([logText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('Logs exported successfully', 'success');
+  });
 }
 
 function showToast(message, type = 'info') {

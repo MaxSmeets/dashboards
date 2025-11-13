@@ -1,7 +1,8 @@
 import { getState, subscribe } from '../store.js';
 import { registerRoute } from '../router.js';
+import { createDependencyGraph } from '../components/dependencyGraph.js';
 
-let currentView = 'grid'; // 'grid' or 'list'
+let currentView = 'grid'; // 'grid', 'list', or 'graph'
 let searchQuery = '';
 let selectedTags = new Set();
 let sortBy = 'status'; // 'status', 'name', 'latency'
@@ -31,10 +32,11 @@ function renderServicesPage() {
                        value="${escapeHtml(searchQuery)}" 
                        style="padding:8px;border:1px solid rgba(0,0,0,0.1);border-radius:6px;min-width:200px">
                 <button class="btn-secondary" id="toggle-view">
-                    ${currentView === 'grid' ? 'List View' : 'Grid View'}
+                    ${currentView === 'grid' ? 'List View' : currentView === 'list' ? 'Graph View' : 'Grid View'}
                 </button>
             </div>
         </div>
+        ${currentView !== 'graph' ? `
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
             <label style="font-weight:600;margin-right:8px">Tags:</label>
             ${getAllTags(s.data.services).map(tag => `
@@ -52,23 +54,33 @@ function renderServicesPage() {
                 <option value="latency" ${sortBy === 'latency' ? 'selected' : ''}>Latency</option>
             </select>
         </div>
+        ` : ''}
     `;
     container.appendChild(header);
     
-    // Filtered and sorted services
-    const filteredServices = filterAndSortServices(s.data.services);
-    
-    // Services grid/list
+    // Services content based on view mode
     const servicesContainer = document.createElement('div');
-    servicesContainer.className = currentView === 'grid' ? 'grid-tiles' : 'services-list';
     
-    if (filteredServices.length === 0) {
-        servicesContainer.innerHTML = '<div class="card"><p>No services match your filters.</p></div>';
+    if (currentView === 'graph') {
+        servicesContainer.className = 'card';
+        servicesContainer.innerHTML = `
+            <h3>Service Dependency Graph</h3>
+            <p class="small">Visualize service relationships and dependencies</p>
+            ${createDependencyGraph(s.data.services)}
+        `;
     } else {
-        filteredServices.forEach(service => {
-            const tile = createServiceTile(service);
-            servicesContainer.appendChild(tile);
-        });
+        // Filtered and sorted services
+        const filteredServices = filterAndSortServices(s.data.services);
+        servicesContainer.className = currentView === 'grid' ? 'grid-tiles' : 'services-list';
+        
+        if (filteredServices.length === 0) {
+            servicesContainer.innerHTML = '<div class="card"><p>No services match your filters.</p></div>';
+        } else {
+            filteredServices.forEach(service => {
+                const tile = createServiceTile(service);
+                servicesContainer.appendChild(tile);
+            });
+        }
     }
     
     container.appendChild(servicesContainer);
@@ -82,7 +94,9 @@ function renderServicesPage() {
     });
     
     header.querySelector('#toggle-view')?.addEventListener('click', () => {
-        currentView = currentView === 'grid' ? 'list' : 'grid';
+        if (currentView === 'grid') currentView = 'list';
+        else if (currentView === 'list') currentView = 'graph';
+        else currentView = 'grid';
         renderServicesPage();
     });
     
